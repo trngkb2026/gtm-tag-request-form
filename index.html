@@ -288,18 +288,7 @@
     <div class="card">
       <div class="card-title">タグ情報</div>
 
-      <div class="field">
-        <label class="lbl">タグ種別<span class="req">*</span></label>
-        <div class="radio-group">
-          <label><input type="radio" name="tagType" value="CV計測（Purchase/Conversion）" required> CV計測</label>
-          <label><input type="radio" name="tagType" value="LP到達計測（ViewContent）"> LP到達計測</label>
-          <label><input type="radio" name="tagType" value="確認画面計測"> 確認画面計測</label>
-          <label><input type="radio" name="tagType" value="ベースコード（Pixel等）"> ベースコード</label>
-          <label><input type="radio" name="tagType" value="リターゲティング"> リターゲティング</label>
-          <label><input type="radio" name="tagType" value="イベント計測"> イベント計測</label>
-        </div>
-        <div class="tag-name-preview" id="tagNamePreview"></div>
-      </div>
+      <div class="tag-name-preview" id="tagNamePreview"></div>
 
       <div class="field">
         <label class="lbl">発火ページ<span class="req">*</span></label>
@@ -307,7 +296,6 @@
           <label><input type="checkbox" name="pageType" value="LP TOP"> LP TOP</label>
           <label><input type="checkbox" name="pageType" value="確認画面"> 確認画面</label>
           <label><input type="checkbox" name="pageType" value="サンクスページ"> サンクスページ</label>
-          <label><input type="checkbox" name="pageType" value="全ページ"> 全ページ</label>
         </div>
       </div>
 
@@ -383,14 +371,6 @@ let selectedLPs = [];
 const NOTIFY_ENDPOINT = window.GTM_FORM_CONFIG?.notifyEndpoint
   || 'https://hiuclxudffbdtqtzlirc.supabase.co/functions/v1/gtm-chatwork-notify';
 
-const TAG_SUFFIX = {
-  'CV計測（Purchase/Conversion）': 'サンクス',
-  'LP到達計測（ViewContent）': 'LP',
-  '確認画面計測': '確認画面',
-  'ベースコード（Pixel等）': '',
-  'リターゲティング': 'リターゲティング',
-  'イベント計測': 'イベント'
-};
 
 document.addEventListener('DOMContentLoaded', () => {
   const now = new Date();
@@ -415,11 +395,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Tag type change → update preview
-  document.querySelectorAll('input[name="tagType"]').forEach(r => {
-    r.addEventListener('change', updateTagPreview);
-  });
-
   // Agency change → update preview
   document.getElementById('agency').addEventListener('change', updateTagPreview);
 
@@ -430,10 +405,9 @@ document.addEventListener('DOMContentLoaded', () => {
 function updateTagPreview() {
   const agency = document.getElementById('agency').value;
   const platformRadio = document.querySelector('input[name="platform"]:checked');
-  const tagTypeRadio = document.querySelector('input[name="tagType"]:checked');
   const preview = document.getElementById('tagNamePreview');
 
-  if (!agency || !platformRadio || !tagTypeRadio) {
+  if (!agency || !platformRadio) {
     preview.classList.remove('show');
     return;
   }
@@ -443,8 +417,7 @@ function updateTagPreview() {
     platform = document.getElementById('platformOther').value.trim() || '(媒体名)';
   }
 
-  const suffix = TAG_SUFFIX[tagTypeRadio.value] || '';
-  const tagName = `${agency} - ${platform}${suffix ? ' ' + suffix : ''}`;
+  const tagName = `${agency} - ${platform}`;
   preview.textContent = `自動生成タグ名: ${tagName}`;
   preview.classList.add('show');
 }
@@ -540,14 +513,13 @@ async function handleSubmit(e) {
   const requester = document.getElementById('requester').value;
   const agency = document.getElementById('agency').value;
   const platformRadio = document.querySelector('input[name="platform"]:checked');
-  const tagTypeRadio = document.querySelector('input[name="tagType"]:checked');
   const workTypeRadio = document.querySelector('input[name="workType"]:checked');
   const variantRadio = document.querySelector('input[name="includeVariants"]:checked');
   const pageTypes = [...document.querySelectorAll('input[name="pageType"]:checked')].map(c => c.value);
   const notes = document.getElementById('notes').value;
   const desiredDate = document.getElementById('desiredDate').value;
 
-  if (!requester || !agency || !platformRadio || !tagTypeRadio) {
+  if (!requester || !agency || !platformRadio) {
     showToast('必須項目を入力してください', 'error');
     return;
   }
@@ -565,8 +537,7 @@ async function handleSubmit(e) {
     platform = document.getElementById('platformOther').value.trim() || 'その他';
   }
 
-  const suffix = TAG_SUFFIX[tagTypeRadio.value] || '';
-  const tagName = `${agency} - ${platform}${suffix ? ' ' + suffix : ''}`;
+  const tagName = `${agency} - ${platform}`;
 
   btn.disabled = true;
   btn.textContent = '送信中...';
@@ -577,7 +548,6 @@ async function handleSubmit(e) {
       agency,
       platform,
       tagName,
-      tagType: tagTypeRadio.value,
       workType: workTypeRadio ? workTypeRadio.value : '',
       pageTypes,
       lpNames: selectedLPs,
