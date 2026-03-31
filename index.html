@@ -302,6 +302,18 @@
     <div class="card">
       <div class="card-title">タグ情報</div>
 
+      <div class="field">
+        <label class="lbl">対象LP<span class="req">*</span></label>
+        <div class="hint">LP名で検索して選択（複数選択可）</div>
+        <div class="lp-select-container" id="lpContainer">
+          <div class="lp-tags" id="lpTags">
+            <input type="text" class="lp-search" id="lpSearch" placeholder="LP名で検索...">
+          </div>
+          <div class="lp-dropdown" id="lpDropdown"></div>
+        </div>
+        <div class="lp-count" id="lpCount">0件選択中</div>
+      </div>
+
       <div class="tag-name-preview" id="tagNamePreview"></div>
 
       <div class="field">
@@ -325,23 +337,6 @@
           <textarea class="tag-code" id="tagCode" placeholder="&lt;script&gt;...タグコードをここに貼り付け...&lt;/script&gt;"></textarea>
         </div>
       </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">対象LP選択</div>
-
-      <div class="field">
-        <label class="lbl">対象LP<span class="req">*</span></label>
-        <div class="hint">LP名で検索して選択（複数選択可）</div>
-        <div class="lp-select-container" id="lpContainer">
-          <div class="lp-tags" id="lpTags">
-            <input type="text" class="lp-search" id="lpSearch" placeholder="LP名で検索...">
-          </div>
-          <div class="lp-dropdown" id="lpDropdown"></div>
-        </div>
-        <div class="lp-count" id="lpCount">0件選択中</div>
-      </div>
-
     </div>
 
     <div class="card">
