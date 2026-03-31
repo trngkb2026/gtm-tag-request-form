@@ -379,6 +379,10 @@ const LP_NAMES = ["20250220","IC_test","IC_test_2","MPC1A","MPC1A_A","MPC1A_A8",
 
 let selectedLPs = [];
 
+// エンドポイント設定（環境に応じて切り替え可能）
+const NOTIFY_ENDPOINT = window.GTM_FORM_CONFIG?.notifyEndpoint
+  || 'https://hiuclxudffbdtqtzlirc.supabase.co/functions/v1/gtm-chatwork-notify';
+
 const TAG_SUFFIX = {
   'CV計測（Purchase/Conversion）': 'サンクス',
   'LP到達計測（ViewContent）': 'LP',
@@ -393,7 +397,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const pad = n => String(n).padStart(2, '0');
   document.getElementById('requestDate').textContent =
     `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-  document.getElementById('desiredDate').setAttribute('min', now.toISOString().split('T')[0]);
+  // ローカル時刻からYYYY-MM-DDを算出（UTC変換によるタイムゾーンずれを回避）
+  const localDateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  document.getElementById('desiredDate').setAttribute('min', localDateStr);
 
   // Platform "other" toggle + tag preview update
   document.querySelectorAll('input[name="platform"]').forEach(r => {
@@ -581,7 +587,7 @@ async function handleSubmit(e) {
       requestDate: document.getElementById('requestDate').textContent
     };
 
-    const res = await fetch('https://hiuclxudffbdtqtzlirc.supabase.co/functions/v1/gtm-chatwork-notify', {
+    const res = await fetch(NOTIFY_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
