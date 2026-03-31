@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GTMタグ設置依頼フォーム</title>
+<style>
+  :root {
+    --primary: #0071e3;
+    --primary-hover: #0077ed;
+    --bg: #f5f5f7;
+    --card-bg: #ffffff;
+    --border: #d2d2d7;
+    --text: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --error: #ff3b30;
+    --success: #34c759;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Meiryo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 20px;
+  }
+  .container { max-width: 680px; margin: 0 auto; padding-bottom: 40px; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 28px; }
+  .card {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 24px 28px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 16px;
+  }
+  .field { margin-bottom: 18px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label.lbl {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .req { color: var(--error); margin-left: 2px; }
+  .hint { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  select, input[type="text"], input[type="date"], textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    background: white;
+    transition: border-color .15s;
+  }
+  select:focus, input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0,113,227,.12);
+  }
+  textarea { resize: vertical; min-height: 80px; }
+  .radio-group, .checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+  }
+  .radio-group label, .checkbox-group label {
+    font-weight: 400;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+  .radio-group input, .checkbox-group input {
+    width: 16px; height: 16px;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+  .lp-select-container {
+    position: relative;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: white;
+    transition: border-color .15s;
+  }
+  .lp-select-container.focused {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0,113,227,.12);
+  }
+  .lp-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px;
+    min-height: 42px;
+    cursor: text;
+  }
+  .lp-tag {
+    display: inline-flex;
+    align-items: center;
+    background: #e8f0fe;
+    color: #1a73e8;
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 14px;
+    gap: 4px;
+    white-space: nowrap;
+  }
+  .lp-tag .remove {
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    opacity: 0.6;
+    margin-left: 2px;
+  }
+  .lp-tag .remove:hover { opacity: 1; }
+  .lp-search {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    padding: 4px 8px !important;
+    font-size: 13px;
+    min-width: 140px;
+    flex: 1;
+  }
+  .lp-dropdown {
+    position: absolute;
+    top: 100%;
+    left: -1.5px;
+    right: -1.5px;
+    max-height: 220px;
+    overflow-y: auto;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    z-index: 10;
+    display: none;
+  }
+  .lp-dropdown.show { display: block; }
+  .lp-option {
+    padding: 8px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .1s;
+  }
+  .lp-option:hover { background: #f1f3f4; }
+  .lp-option.selected { background: #e8f0fe; color: #1a73e8; font-weight: 500; }
+  .lp-count { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+  .platform-other-wrap { display: none; margin-top: 8px; }
+  .platform-other-wrap.show { display: block; }
+  .date-readonly {
+    font-size: 14px;
+    color: var(--text-secondary);
+    padding: 10px 12px;
+    background: #f5f5f7;
+    border-radius: 8px;
+    border: 1.5px solid #e5e5ea;
+  }
+  .tag-name-preview {
+    font-size: 13px;
+    color: var(--primary);
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #e8f0fe;
+    border-radius: 6px;
+    display: none;
+  }
+  .tag-name-preview.show { display: block; }
+  .submit-section { margin-top: 24px; }
+  .submit-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: var(--primary);
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .submit-btn:hover { background: var(--primary-hover); }
+  .submit-btn:disabled { background: #ccc; cursor: not-allowed; }
+  .toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 14px 24px;
+    border-radius: 10px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 100;
+    transform: translateX(120%);
+    transition: transform .3s;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  }
+  .toast.show { transform: translateX(0); }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--error); }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>GTMタグ設置依頼フォーム</h1>
+  <p class="subtitle">cp.s-herb.com (GTM-59HCJW) — 送信するとChatWorkに自動通知されます</p>
+
+  <form id="gtmForm">
+
+    <div class="card">
+      <div class="card-title">基本情報</div>
+
+      <div class="field">
+        <label class="lbl">依頼者<span class="req">*</span></label>
+        <select id="requester" required>
+          <option value="">選択してください</option>
+          <option value="taro">taro</option>
+          <option value="スタッフA">スタッフA</option>
+          <option value="スタッフB">スタッフB</option>
+          <option value="スタッフC">スタッフC</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="lbl">代理店 / 運用者<span class="req">*</span></label>
+        <select id="agency" required>
+          <option value="">選択してください</option>
+          <option value="N&M">N&M</option>
+          <option value="星組">星組</option>
+          <option value="自社運用">自社運用</option>
+          <option value="AA">AA</option>
+          <option value="トリックトラック(TT)">トリックトラック(TT)</option>
+          <option value="ZEALS">ZEALS</option>
+          <option value="PIALA">PIALA</option>
+          <option value="URR">URR</option>
+          <option value="Dashboard">Dashboard</option>
+          <option value="CyberAgent">CyberAgent</option>
+          <option value="Anagrams">Anagrams</option>
+          <option value="オプティマイザー">オプティマイザー</option>
+          <option value="メディパートナー(MP)">メディパートナー(MP)</option>
+          <option value="MONKEY">MONKEY</option>
+          <option value="ロードランナー">ロードランナー</option>
+          <option value="FS">FS</option>
+          <option value="afb">afb</option>
+          <option value="平島SA">平島SA</option>
+          <option value="プレグロ">プレグロ</option>
+          <option value="フェルマ">フェルマ</option>
+          <option value="ユニバースフィット">ユニバースフィット</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="lbl">媒体<span class="req">*</span></label>
+        <div class="radio-group" id="platformGroup">
+          <label><input type="radio" name="platform" value="Meta" required> Meta</label>
+          <label><input type="radio" name="platform" value="LINE"> LINE</label>
+          <label><input type="radio" name="platform" value="Google"> Google</label>
+          <label><input type="radio" name="platform" value="Yahoo"> Yahoo</label>
+          <label><input type="radio" name="platform" value="SmartNews"> SmartNews</label>
+          <label><input type="radio" name="platform" value="TikTok"> TikTok</label>
+          <label><input type="radio" name="platform" value="X(Twitter)"> X(Twitter)</label>
+          <label><input type="radio" name="platform" value="YouTube"> YouTube</label>
+          <label><input type="radio" name="platform" value="Criteo"> Criteo</label>
+          <label><input type="radio" name="platform" value="Microsoft"> Microsoft</label>
+          <label><input type="radio" name="platform" value="YDA"> YDA</label>
+          <label><input type="radio" name="platform" value="アウトブレイン"> アウトブレイン</label>
+          <label><input type="radio" name="platform" value="other"> その他</label>
+        </div>
+        <div class="platform-other-wrap" id="platformOtherWrap">
+          <input type="text" id="platformOther" placeholder="媒体名を入力" oninput="updateTagPreview()">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">タグ情報</div>
+
+      <div class="field">
+        <label class="lbl">タグ種別<span class="req">*</span></label>
+        <div class="radio-group">
+          <label><input type="radio" name="tagType" value="CV計測（Purchase/Conversion）" required> CV計測</label>
+          <label><input type="radio" name="tagType" value="LP到達計測（ViewContent）"> LP到達計測</label>
+          <label><input type="radio" name="tagType" value="確認画面計測"> 確認画面計測</label>
+          <label><input type="radio" name="tagType" value="ベースコード（Pixel等）"> ベースコード</label>
+          <label><input type="radio" name="tagType" value="リターゲティング"> リターゲティング</label>
+          <label><input type="radio" name="tagType" value="イベント計測"> イベント計測</label>
+        </div>
+        <div class="tag-name-preview" id="tagNamePreview"></div>
+      </div>
+
+      <div class="field">
+        <label class="lbl">発火ページ<span class="req">*</span></label>
+        <div class="checkbox-group">
+          <label><input type="checkbox" name="pageType" value="LP TOP"> LP TOP</label>
+          <label><input type="checkbox" name="pageType" value="確認画面"> 確認画面</label>
+          <label><input type="checkbox" name="pageType" value="サンクスページ"> サンクスページ</label>
+          <label><input type="checkbox" name="pageType" value="全ページ"> 全ページ</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="lbl">作業種別<span class="req">*</span></label>
+        <div class="radio-group">
+          <label><input type="radio" name="workType" value="既存タグへトリガー追加" required checked> 既存タグへトリガー追加</label>
+          <label><input type="radio" name="workType" value="新規タグ作成＋トリガー設定"> 新規タグ作成＋トリガー設定</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">対象LP選択</div>
+
+      <div class="field">
+        <label class="lbl">対象LP<span class="req">*</span></label>
+        <div class="hint">LP名で検索して選択（複数選択可）</div>
+        <div class="lp-select-container" id="lpContainer">
+          <div class="lp-tags" id="lpTags">
+            <input type="text" class="lp-search" id="lpSearch" placeholder="LP名で検索...">
+          </div>
+          <div class="lp-dropdown" id="lpDropdown"></div>
+        </div>
+        <div class="lp-count" id="lpCount">0件選択中</div>
+      </div>
+
+      <div class="field">
+        <label class="lbl">派生LP（ECO2〜4等）も含む？</label>
+        <div class="radio-group">
+          <label><input type="radio" name="includeVariants" value="ベースURLのみ" checked> ベースURLのみ</label>
+          <label><input type="radio" name="includeVariants" value="派生LPも含む"> 派生LPも含む（ECO2〜4等）</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">その他</div>
+
+      <div class="field">
+        <label class="lbl">補足・特記事項</label>
+        <textarea id="notes" placeholder="特別な条件や注意点があれば記入"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="lbl">設置希望日</label>
+        <input type="date" id="desiredDate">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <label class="lbl" style="color:var(--text-secondary)">依頼日（自動記録）</label>
+        <div class="date-readonly" id="requestDate"></div>
+      </div>
+    </div>
+
+    <div class="submit-section">
+      <button type="submit" class="submit-btn" id="submitBtn">タグ設置依頼する</button>
+    </div>
+
+  </form>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const LP_NAMES = ["20250220","IC_test","IC_test_2","MPC1A","MPC1A_A","MPC1A_A8","MPC1A_B","MPC1A_D","MPK1A","MPK1A_A8","MPK1C","MPK1C_IC","MPK1C_IC_test","MPK1D","MPK1E","MPK1F","MPK1_up_test","MPK3A","PC15D_26_AL_2003","PC15D_26_AL_2004","PC15D_26_AL_2005","PC15D_26_AL_2006","PC15D_D","PC15D_test","PC15D_test2","PC1A","PC1A_2602","PC1A_A8","PC1A_AA_20231106","PC1A_AA_20240205","PC1A_AA_20240228","PC1A_AA_20240419","PC1A_IC","PC1A_IC_240628","PC1A_IC_T01","PC1A_IC_T01UP","PC1A_IC_T02","PC1A_IC_T03","PC1A_IC_T04","PC1A_IC_test","PC1A_LS","PC1A_LS_2408","PC1A_UTG","PC1A_testpage","PC1A_testpage_2","PC1A_utgtest","PC1B","PCPKG1A","PCPKG1AP","PCPKG1A_2401test","PCPKG1A_LN","PCPKG1A_RPOP","PCPKG1A_YG","PCPKG1B","PC_AA_20240115","PK22H_P47_AL_1905","PK22H_S47_AL_1905","PK22H_S52_AL_1910","PK22J_S47_AA_2105","PK22J_S47_AA_2208","PK22J_S47_SA_2003","PK22L_56_AL_2010","PK22L_56_AN_2204","PK22L_56_MK_2110","PK22L_56_TT_2110","PK22L_56_test","PKB1A","PKG1G","PKG1G_A8","PKG1G_AA_20231116","PKG1G_ECO","PKG1G_FD","PKG1G_LS","PKG1G_LS_MP","PKG1G_SA","PKG1G_TELtest","PKG1G_UTG","PKG1I2","PKG1J","PKG1J_2502_TRG","PKG1J_2504_TRG","PKG1J_2505_TRG","PKG1J_2505_TRG_B","PKG1J_2505_TRG_hokan","PKG1J_2506_TRG","PKG1J_2507_ncPUSH","PKG1J_2507_rrtPUSH","PKG1J_2510G_TG","PKG1J_2605_push","PKG1J_2606_ECO","PKG1J_2607a_push","PKG1J_2607b_push","PKG1J_2607c_push","PKG1J_A8","PKG1J_AA_20231113","PKG1J_AA_20231221","PKG1J_AA_20240301","PKG1J_AA_20240412","PKG1J_AA_20240419","PKG1J_AA_2111","PKG1J_AN","PKG1J_AN24","PKG1J_AN34","PKG1J_Aitest","PKG1J_CH_G","PKG1J_CH_UQ","PKG1J_CP200","PKG1J_ECO","PKG1J_ECO_PH","PKG1J_EVT","PKG1J_IB","PKG1J_IC","PKG1J_IC_test","PKG1J_IC_test2","PKG1J_IC_test_salonSB","PKG1J_LS","PKG1J_LS_2502_TRG","PKG1J_LS_AA","PKG1J_LS_AA_20240321","PKG1J_LS_AF","PKG1J_LS_MP","PKG1J_MIL","PKG1J_PH","PKG1J_PH_LS","PKG1J_SMIT","PKG1J_ST","PKG1J_TELtest","PKG1J_UTG","PKG1J_daytest","PKG1J_direct","PKG1J_movietest","PKG1J_storage","PKG1J_test","PKG1J_test2","PKG1J_test5","PKG1J_test6","PKG1J_utgtest","PKG1KS","PKG1KS_test","PKG1KS_up_test","PKG1L","PKG1L_A","PKG1L_B","PKG1L_C","PKG1L_D","PKG1M","PKG1N","PKG1NAB","PKG1NB","PKG1NP","PKG1NR","PKG1NT","PKG1N_2510G_TG","PKG1N_2606_ECO","PKG1N_CP200","PKG1N_ECO","PKG1N_ECO_LN","PKG1N_IFPH","PKG1N_LN","PKG1N_PH","PKG1N_RPOP","PKG1N_push","PKG1N_push_b","PKG1O","PKG1P","PKG1Q_ECO","PKG1Q_ECO2","PKG1Q_ECO3","PKG1Q_ECO4","PKG1Q_ECO_IFCP2511","PKG1Q_ECO_PST","PKG1Q_SS","PKG1R","PKG1R_ECO","PKG1R_ECO2","PKG1R_ECO3","PKG1R_ECO4","PKG1R_ECO_IFCP2511","PKG1R_SS","PKG1S","PKG1S_B","PKG1T","PKG1U","PKG1_IC_T05_KIDS","PKG1_IC_T05_SELF","PKG1_IC_T06_KIDS","PKG3C","PKG3C_2606_ECO","PKG3C_A8","PKG3C_AA_20240226","PKG3C_AA_20240618","PKG3C_AA_test","PKG3C_AN","PKG3C_CLS","PKG3C_ECO","PKG3C_ECO2","PKG3C_EVT","PKG3C_KA_test","PKG3C_LS","PKG3C_LS_test","PKG3C_PH_LS","PKG3C_TELtest","PKG3D","PKG3D_A8","PKG3E","PKG3EP","PKG3ER","PKG3E_2606_ECO","PKG3E_ECO","PKG3E_LN","PKG3E_LN_PC","PKG3E_PH","PKG3E_PL_LN","PKG3I","PKG3J","PKG3K","PKG3KS","PKG3KS_test","PKGM1A_AC","PLTP1PLTPE2","PLTP1PLTPE2_UP","PLTP1_RPOP","PRM15E_test","PRM15E_test2","PRM15E_test_b","SPO1A","SPO1A_A8","SR1A","SR1A_A8","SR1B","TEIKI_2602","_AA_20240115","_AA_20240226","harumeku_M","harumeku_M2","test_CTA","test_step"];
+
+let selectedLPs = [];
+
+const TAG_SUFFIX = {
+  'CV計測（Purchase/Conversion）': 'サンクス',
+  'LP到達計測（ViewContent）': 'LP',
+  '確認画面計測': '確認画面',
+  'ベースコード（Pixel等）': '',
+  'リターゲティング': 'リターゲティング',
+  'イベント計測': 'イベント'
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('requestDate').textContent =
+    `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  document.getElementById('desiredDate').setAttribute('min', now.toISOString().split('T')[0]);
+
+  // Platform "other" toggle + tag preview update
+  document.querySelectorAll('input[name="platform"]').forEach(r => {
+    r.addEventListener('change', () => {
+      const wrap = document.getElementById('platformOtherWrap');
+      if (r.value === 'other' && r.checked) {
+        wrap.classList.add('show');
+        document.getElementById('platformOther').focus();
+      } else {
+        wrap.classList.remove('show');
+      }
+      updateTagPreview();
+    });
+  });
+
+  // Tag type change → update preview
+  document.querySelectorAll('input[name="tagType"]').forEach(r => {
+    r.addEventListener('change', updateTagPreview);
+  });
+
+  // Agency change → update preview
+  document.getElementById('agency').addEventListener('change', updateTagPreview);
+
+  initLPSelect();
+  document.getElementById('gtmForm').addEventListener('submit', handleSubmit);
+});
+
+function updateTagPreview() {
+  const agency = document.getElementById('agency').value;
+  const platformRadio = document.querySelector('input[name="platform"]:checked');
+  const tagTypeRadio = document.querySelector('input[name="tagType"]:checked');
+  const preview = document.getElementById('tagNamePreview');
+
+  if (!agency || !platformRadio || !tagTypeRadio) {
+    preview.classList.remove('show');
+    return;
+  }
+
+  let platform = platformRadio.value;
+  if (platform === 'other') {
+    platform = document.getElementById('platformOther').value.trim() || '(媒体名)';
+  }
+
+  const suffix = TAG_SUFFIX[tagTypeRadio.value] || '';
+  const tagName = `${agency} - ${platform}${suffix ? ' ' + suffix : ''}`;
+  preview.textContent = `自動生成タグ名: ${tagName}`;
+  preview.classList.add('show');
+}
+
+function initLPSelect() {
+  const search = document.getElementById('lpSearch');
+  const dropdown = document.getElementById('lpDropdown');
+  const container = document.getElementById('lpContainer');
+
+  search.addEventListener('focus', () => {
+    container.classList.add('focused');
+    renderDropdown(search.value);
+    dropdown.classList.add('show');
+  });
+  search.addEventListener('input', () => {
+    renderDropdown(search.value);
+    dropdown.classList.add('show');
+  });
+  document.addEventListener('click', (e) => {
+    if (!container.contains(e.target)) {
+      dropdown.classList.remove('show');
+      container.classList.remove('focused');
+    }
+  });
+  document.getElementById('lpTags').addEventListener('click', () => search.focus());
+}
+
+function renderDropdown(query) {
+  const dropdown = document.getElementById('lpDropdown');
+  const q = query.toLowerCase();
+  const filtered = LP_NAMES.filter(name => name.toLowerCase().includes(q));
+
+  dropdown.innerHTML = filtered.slice(0, 50).map(name => {
+    const isSel = selectedLPs.includes(name);
+    return `<div class="lp-option${isSel ? ' selected' : ''}" data-lp="${name}">${name}</div>`;
+  }).join('');
+
+  if (filtered.length > 50) {
+    dropdown.innerHTML += `<div class="lp-option" style="color:var(--text-secondary);cursor:default;font-size:12px">...他${filtered.length - 50}件（絞り込んでください）</div>`;
+  }
+  if (filtered.length === 0) {
+    dropdown.innerHTML = `<div class="lp-option" style="color:var(--text-secondary);cursor:default">該当なし</div>`;
+  }
+
+  dropdown.querySelectorAll('.lp-option[data-lp]').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const lp = opt.dataset.lp;
+      if (selectedLPs.includes(lp)) {
+        selectedLPs = selectedLPs.filter(x => x !== lp);
+      } else {
+        selectedLPs.push(lp);
+      }
+      renderTags();
+      renderDropdown(document.getElementById('lpSearch').value);
+    });
+  });
+}
+
+function renderTags() {
+  const tagsEl = document.getElementById('lpTags');
+  const search = document.getElementById('lpSearch');
+  tagsEl.innerHTML = '';
+  selectedLPs.forEach(lp => {
+    const tag = document.createElement('span');
+    tag.className = 'lp-tag';
+    tag.innerHTML = `${lp}<span class="remove" data-lp="${lp}">&times;</span>`;
+    tagsEl.appendChild(tag);
+  });
+  tagsEl.appendChild(search);
+  document.getElementById('lpCount').textContent = `${selectedLPs.length}件選択中`;
+
+  tagsEl.querySelectorAll('.remove').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectedLPs = selectedLPs.filter(x => x !== btn.dataset.lp);
+      renderTags();
+      renderDropdown(document.getElementById('lpSearch').value);
+    });
+  });
+}
+
+function showToast(message, type) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = `toast ${type} show`;
+  setTimeout(() => toast.classList.remove('show'), 4000);
+}
+
+async function handleSubmit(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+
+  const requester = document.getElementById('requester').value;
+  const agency = document.getElementById('agency').value;
+  const platformRadio = document.querySelector('input[name="platform"]:checked');
+  const tagTypeRadio = document.querySelector('input[name="tagType"]:checked');
+  const workTypeRadio = document.querySelector('input[name="workType"]:checked');
+  const variantRadio = document.querySelector('input[name="includeVariants"]:checked');
+  const pageTypes = [...document.querySelectorAll('input[name="pageType"]:checked')].map(c => c.value);
+  const notes = document.getElementById('notes').value;
+  const desiredDate = document.getElementById('desiredDate').value;
+
+  if (!requester || !agency || !platformRadio || !tagTypeRadio) {
+    showToast('必須項目を入力してください', 'error');
+    return;
+  }
+  if (selectedLPs.length === 0) {
+    showToast('対象LPを1つ以上選択してください', 'error');
+    return;
+  }
+  if (pageTypes.length === 0) {
+    showToast('発火ページを1つ以上選択してください', 'error');
+    return;
+  }
+
+  let platform = platformRadio.value;
+  if (platform === 'other') {
+    platform = document.getElementById('platformOther').value.trim() || 'その他';
+  }
+
+  const suffix = TAG_SUFFIX[tagTypeRadio.value] || '';
+  const tagName = `${agency} - ${platform}${suffix ? ' ' + suffix : ''}`;
+
+  btn.disabled = true;
+  btn.textContent = '送信中...';
+
+  try {
+    const data = {
+      requester,
+      agency,
+      platform,
+      tagName,
+      tagType: tagTypeRadio.value,
+      workType: workTypeRadio ? workTypeRadio.value : '',
+      pageTypes,
+      lpNames: selectedLPs,
+      includeVariants: variantRadio ? variantRadio.value : '',
+      notes,
+      desiredDate: desiredDate || '指定なし',
+      requestDate: document.getElementById('requestDate').textContent
+    };
+
+    const res = await fetch('https://hiuclxudffbdtqtzlirc.supabase.co/functions/v1/gtm-chatwork-notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+      showToast('ChatWorkに依頼を送信しました', 'success');
+      document.getElementById('gtmForm').reset();
+      selectedLPs = [];
+      renderTags();
+      document.getElementById('platformOtherWrap').classList.remove('show');
+      document.getElementById('tagNamePreview').classList.remove('show');
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      document.getElementById('requestDate').textContent =
+        `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    } else {
+      const err = await res.json();
+      showToast(`送信エラー: ${err.error}`, 'error');
+    }
+  } catch (error) {
+    showToast(`通信エラー: ${error.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'タグ設置依頼する';
+  }
+}
+</script>
+</body>
+</html>
