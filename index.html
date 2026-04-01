@@ -616,12 +616,19 @@ function updatePreviewPanel() {
   }
 
   // ── URL Preview（実データベース）──
-  // 確認画面はTPL共通トリガー（ID:283）で処理するためURLプレビュー対象外
+  // URL Preview（実データ: LP_CAMPAIGN_MAPベース）
   const urls = [];
   selectedLPs.forEach(lp => {
     pageTypes.forEach(pt => {
       if (pt === 'LP TOP') {
         urls.push({ url: `https://cp.s-herb.com/${lp}`, lp, page: 'LP', valid: true });
+      } else if (pt === '確認画面') {
+        const cid = LP_CAMPAIGN_MAP[lp];
+        if (cid) {
+          urls.push({ url: `https://cp.s-herb.com/orders/${cid}/confirm`, lp, page: '確認', valid: true });
+        } else {
+          urls.push({ url: `⚠ ${lp} → campaign_id 未登録`, lp, page: '確認', valid: false });
+        }
       } else if (pt === 'サンクスページ') {
         const cid = LP_CAMPAIGN_MAP[lp];
         if (cid) {
