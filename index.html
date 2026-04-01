@@ -398,7 +398,22 @@
 
       <div class="field">
         <label class="lbl">対象LP<span class="req">*</span></label>
-        <div class="lp-group-bar" id="lpGroupBar"></div>
+        <div class="lp-group-bar" id="lpGroupBar">
+          <button type="button" class="lp-group-btn active" data-group="all">全て<span class="cnt">237</span></button>
+          <button type="button" class="lp-group-btn" data-group="PKG1J">PKG1J<span class="cnt">59</span></button>
+          <button type="button" class="lp-group-btn" data-group="PKG1N">PKG1N<span class="cnt">17</span></button>
+          <button type="button" class="lp-group-btn" data-group="PKG1G">PKG1G<span class="cnt">10</span></button>
+          <button type="button" class="lp-group-btn" data-group="PKG1他">PKG1他<span class="cnt">33</span></button>
+          <button type="button" class="lp-group-btn" data-group="PKG3C">PKG3C<span class="cnt">16</span></button>
+          <button type="button" class="lp-group-btn" data-group="PKG3E">PKG3E<span class="cnt">9</span></button>
+          <button type="button" class="lp-group-btn" data-group="PKG3他">PKG3他<span class="cnt">7</span></button>
+          <button type="button" class="lp-group-btn" data-group="PC1A">PC1A<span class="cnt">22</span></button>
+          <button type="button" class="lp-group-btn" data-group="PC15D">PC15D<span class="cnt">7</span></button>
+          <button type="button" class="lp-group-btn" data-group="PCPKG">PCPKG<span class="cnt">7</span></button>
+          <button type="button" class="lp-group-btn" data-group="PK22">PK22<span class="cnt">11</span></button>
+          <button type="button" class="lp-group-btn" data-group="MPC/MPK">MPC/MPK<span class="cnt">15</span></button>
+          <button type="button" class="lp-group-btn" data-group="その他">その他<span class="cnt">24</span></button>
+        </div>
         <div class="lp-select-container" id="lpContainer">
           <div class="lp-tags" id="lpTags">
             <input type="text" class="lp-search" id="lpSearch" placeholder="LP名で検索...">
@@ -708,8 +723,20 @@ function initLPSelect() {
   const dropdown = document.getElementById('lpDropdown');
   const container = document.getElementById('lpContainer');
 
-  // グループピル生成
-  renderGroupBar();
+  // グループピルのクリックハンドラ設定
+  document.querySelectorAll('.lp-group-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const group = btn.dataset.group;
+      activeGroup = (group === 'all') ? null : group;
+      document.querySelectorAll('.lp-group-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      search.value = '';
+      renderDropdown('');
+      dropdown.classList.add('show');
+      container.classList.add('focused');
+      search.focus();
+    });
+  });
 
   search.addEventListener('focus', () => {
     container.classList.add('focused');
@@ -721,48 +748,12 @@ function initLPSelect() {
     dropdown.classList.add('show');
   });
   document.addEventListener('click', (e) => {
-    if (!container.contains(e.target) && !e.target.classList.contains('lp-group-btn')) {
+    if (!container.contains(e.target) && !e.target.closest('.lp-group-btn')) {
       dropdown.classList.remove('show');
       container.classList.remove('focused');
     }
   });
   document.getElementById('lpTags').addEventListener('click', () => search.focus());
-}
-
-function renderGroupBar() {
-  const bar = document.getElementById('lpGroupBar');
-  bar.innerHTML = '';
-  // 「全て」ボタン
-  const allBtn = document.createElement('button');
-  allBtn.type = 'button';
-  allBtn.className = 'lp-group-btn' + (activeGroup === null ? ' active' : '');
-  allBtn.innerHTML = `全て<span class="cnt">${LP_NAMES.length}</span>`;
-  allBtn.addEventListener('click', () => {
-    activeGroup = null;
-    renderGroupBar();
-    document.getElementById('lpSearch').value = '';
-    renderDropdown('');
-    document.getElementById('lpDropdown').classList.add('show');
-    document.getElementById('lpContainer').classList.add('focused');
-  });
-  bar.appendChild(allBtn);
-
-  Object.entries(LP_GROUPS).forEach(([gname, members]) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'lp-group-btn' + (activeGroup === gname ? ' active' : '');
-    btn.innerHTML = `${gname}<span class="cnt">${members.length}</span>`;
-    btn.addEventListener('click', () => {
-      activeGroup = gname;
-      renderGroupBar();
-      document.getElementById('lpSearch').value = '';
-      renderDropdown('');
-      document.getElementById('lpDropdown').classList.add('show');
-      document.getElementById('lpContainer').classList.add('focused');
-      document.getElementById('lpSearch').focus();
-    });
-    bar.appendChild(btn);
-  });
 }
 
 function renderDropdown(query) {
