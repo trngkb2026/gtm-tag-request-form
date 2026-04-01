@@ -30,7 +30,7 @@
   .card {
     background: var(--card-bg);
     border-radius: 14px;
-    padding: 24px 28px;
+    padding: 20px 24px;
     margin-bottom: 16px;
     box-shadow: 0 1px 4px rgba(0,0,0,.08);
   }
@@ -42,7 +42,7 @@
     letter-spacing: .06em;
     margin-bottom: 16px;
   }
-  .field { margin-bottom: 18px; }
+  .field { margin-bottom: 14px; }
   .field:last-child { margin-bottom: 0; }
   .field label.lbl {
     display: block;
@@ -311,18 +311,6 @@
   <form id="gtmForm">
 
     <div class="card">
-      <div class="card-title">基本情報</div>
-
-      <div class="field">
-        <label class="lbl">依頼者<span class="req">*</span></label>
-        <select id="requester" required>
-          <option value="">選択してください</option>
-          <option value="宇留野">宇留野</option>
-          <option value="小松崎">小松崎</option>
-          <option value="蓮井">蓮井</option>
-          <option value="龍山">龍山</option>
-        </select>
-      </div>
 
       <div class="field">
         <label class="lbl">代理店 / 運用者<span class="req">*</span></label>
@@ -377,10 +365,6 @@
           <input type="text" id="platformOther" placeholder="媒体名を入力" oninput="updateTagPreview()">
         </div>
       </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">タグ情報</div>
 
       <div class="field">
         <label class="lbl">対象LP<span class="req">*</span></label>
@@ -434,22 +418,28 @@
           <textarea class="tag-code" id="tagCode" placeholder="&lt;script&gt;...タグコードをここに貼り付け...&lt;/script&gt;"></textarea>
         </div>
       </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">その他</div>
 
       <div class="field">
         <label class="lbl">設置希望日</label>
         <input type="date" id="desiredDate">
       </div>
-    </div>
 
-    <div class="card">
+      <div class="field">
+        <label class="lbl">依頼者<span class="req">*</span></label>
+        <select id="requester" required>
+          <option value="">選択してください</option>
+          <option value="宇留野">宇留野</option>
+          <option value="小松崎">小松崎</option>
+          <option value="蓮井">蓮井</option>
+          <option value="龍山">龍山</option>
+        </select>
+      </div>
+
       <div class="field">
         <label class="lbl" style="color:var(--text-secondary)">依頼日（自動記録）</label>
         <div class="date-readonly" id="requestDate"></div>
       </div>
+
     </div>
 
     <div class="submit-section">
