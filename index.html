@@ -510,6 +510,34 @@ const LP_GROUPS = {"PKG1J": ["PKG1J", "PKG1J_2502_TRG", "PKG1J_2504_TRG", "PKG1J
 // エンドポイント設定（環境に応じて切り替え可能）
 const NOTIFY_ENDPOINT = window.GTM_FORM_CONFIG?.notifyEndpoint
   || 'https://hiuclxudffbdtqtzlirc.supabase.co/functions/v1/gtm-chatwork-notify';
+const AGENCIES_ENDPOINT = 'https://hiuclxudffbdtqtzlirc.supabase.co/functions/v1/gtm-recent-agencies';
+
+// 代理店リストをGTM APIから動的取得
+async function loadAgencies() {
+  const select = document.getElementById('agency');
+  try {
+    const res = await fetch(AGENCIES_ENDPOINT);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.agencies || data.agencies.length === 0) return;
+
+    // 固定オプション以外をクリアして動的に追加
+    select.innerHTML = '<option value="">選択してください</option>';
+    data.agencies.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a;
+      opt.textContent = a;
+      select.appendChild(opt);
+    });
+    const otherOpt = document.createElement('option');
+    otherOpt.value = 'other';
+    otherOpt.textContent = 'その他（入力）';
+    select.appendChild(otherOpt);
+  } catch (e) {
+    // フォールバック: 静的リストのまま
+    console.warn('代理店リスト取得失敗:', e);
+  }
+}
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -561,6 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  loadAgencies(); // GTM APIから代理店リスト取得
   initLPSelect();
   document.getElementById('gtmForm').addEventListener('submit', handleSubmit);
 
