@@ -188,6 +188,86 @@
     display: none;
   }
   .tag-name-preview.show { display: block; }
+  /* ── Preview Panel ── */
+  .preview-panel {
+    background: #f0f7ff;
+    border: 1.5px solid #b3d4fc;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 16px;
+    display: none;
+  }
+  .preview-panel.show { display: block; }
+  .preview-panel-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .preview-row {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+  .preview-row:last-child { margin-bottom: 0; }
+  .preview-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #5a6a7a;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    min-width: 80px;
+    padding-top: 2px;
+    white-space: nowrap;
+  }
+  .preview-value {
+    font-size: 13px;
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    color: #1a3a5c;
+    word-break: break-all;
+    line-height: 1.5;
+    background: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid #dce8f5;
+    flex: 1;
+  }
+  .preview-value.url { color: var(--primary); }
+  .preview-value.tag-name { color: #0d7a3e; }
+  .preview-value.trigger { color: #b45309; }
+  .preview-urls-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+  }
+  .preview-url-item {
+    font-size: 12px;
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    color: var(--primary);
+    background: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid #dce8f5;
+    word-break: break-all;
+    line-height: 1.4;
+  }
+  .preview-count-badge {
+    display: inline-block;
+    background: var(--primary);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 10px;
+    margin-left: 4px;
+  }
   .submit-section { margin-top: 24px; }
   .submit-btn {
     width: 100%;
@@ -325,11 +405,28 @@
         </div>
       </div>
 
+      <!-- ── Preview Panel ── -->
+      <div class="preview-panel" id="previewPanel">
+        <div class="preview-panel-title">✅ 設置プレビュー <span style="font-size:11px;font-weight:400;color:#6e6e73">— 設定内容を確認してください</span></div>
+        <div class="preview-row">
+          <span class="preview-label">🌐 対象URL</span>
+          <div class="preview-urls-list" id="previewUrls"></div>
+        </div>
+        <div class="preview-row">
+          <span class="preview-label">🏷️ タグ名称</span>
+          <span class="preview-value tag-name" id="previewTagName">—</span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-label">⚡ トリガー</span>
+          <span class="preview-value trigger" id="previewTrigger">—</span>
+        </div>
+      </div>
+
       <div class="field">
         <label class="lbl">作業種別<span class="req">*</span></label>
         <div class="radio-group">
-          <label><input type="radio" name="workType" value="既存タグへトリガー追加" required checked> 既存タグへトリガー追加</label>
-          <label><input type="radio" name="workType" value="新規タグ作成＋トリガー設定"> 新規タグ作成＋トリガー設定</label>
+          <label><input type="radio" name="workType" value="既存タグへトリガー追加" required> 既存タグへトリガー追加</label>
+          <label><input type="radio" name="workType" value="新規タグ作成＋トリガー設定" checked> 新規タグ作成＋トリガー設定</label>
         </div>
         <div class="tag-code-wrap" id="tagCodeWrap">
           <label class="lbl" style="margin-top:10px">タグコード / スニペット<span class="req">*</span></label>
@@ -425,6 +522,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initLPSelect();
   document.getElementById('gtmForm').addEventListener('submit', handleSubmit);
+
+  // pageType checkbox → プレビュー更新
+  document.querySelectorAll('input[name="pageType"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      updatePreviewPanel();
+    });
+  });
+
+  // 新規タグ作成がデフォルトなのでタグコード欄を表示
+  document.getElementById('tagCodeWrap').classList.add('show');
 });
 
 function updateTagPreview() {
@@ -439,19 +546,115 @@ function updateTagPreview() {
 
   if (!agency || checkedPlatforms.length === 0) {
     preview.classList.remove('show');
+  } else {
+    const platforms = checkedPlatforms.map(cb => {
+      if (cb.value === 'other') {
+        return document.getElementById('platformOther').value.trim() || '(媒体名)';
+      }
+      return cb.value;
+    });
+    const tagName = `${agency} - ${platforms.join(' / ')}`;
+    preview.textContent = `自動生成タグ名: ${tagName}`;
+    preview.classList.add('show');
+  }
+
+  updatePreviewPanel();
+}
+
+// ── URL / タグ名 / トリガー プレビュー ──
+const PAGE_URL_MAP = {
+  'LP TOP': { suffix: '', label: 'LP' },
+  '確認画面': { suffix: '_confirm', label: '確認' },
+  'サンクスページ': { suffix: '_SA', label: 'SA' }
+};
+
+function updatePreviewPanel() {
+  const panel = document.getElementById('previewPanel');
+  const urlsEl = document.getElementById('previewUrls');
+  const tagNameEl = document.getElementById('previewTagName');
+  const triggerEl = document.getElementById('previewTrigger');
+
+  const pageTypes = [...document.querySelectorAll('input[name="pageType"]:checked')].map(c => c.value);
+
+  if (selectedLPs.length === 0 || pageTypes.length === 0) {
+    panel.classList.remove('show');
     return;
   }
 
-  const platforms = checkedPlatforms.map(cb => {
-    if (cb.value === 'other') {
-      return document.getElementById('platformOther').value.trim() || '(媒体名)';
-    }
-    return cb.value;
+  // ── URL Preview ──
+  const urls = [];
+  selectedLPs.forEach(lp => {
+    pageTypes.forEach(pt => {
+      const map = PAGE_URL_MAP[pt];
+      if (!map) return;
+      if (pt === 'LP TOP') {
+        urls.push({ url: `https://cp.s-herb.com/${lp}`, lp, page: map.label });
+      } else if (pt === 'サンクスページ') {
+        urls.push({ url: `https://cp.s-herb.com/${lp}_SA`, lp, page: map.label });
+      } else if (pt === '確認画面') {
+        urls.push({ url: `https://cp.s-herb.com/${lp}${map.suffix}`, lp, page: map.label });
+      }
+    });
   });
 
-  const tagName = `${agency} - ${platforms.join(' / ')}`;
-  preview.textContent = `自動生成タグ名: ${tagName}`;
-  preview.classList.add('show');
+  // Show max 8 URLs, then summarize
+  const maxShow = 8;
+  urlsEl.innerHTML = '';
+  urls.slice(0, maxShow).forEach(u => {
+    const div = document.createElement('div');
+    div.className = 'preview-url-item';
+    div.textContent = u.url;
+    urlsEl.appendChild(div);
+  });
+  if (urls.length > maxShow) {
+    const more = document.createElement('div');
+    more.style.cssText = 'font-size:12px;color:var(--text-secondary);padding:2px 0;';
+    more.textContent = `...他 ${urls.length - maxShow} 件`;
+    urlsEl.appendChild(more);
+  }
+
+  // ── Tag Name Preview ──
+  const agencySelect = document.getElementById('agency');
+  let agency = agencySelect.value;
+  if (agency === 'other') {
+    agency = document.getElementById('agencyOther').value.trim() || '(代理店)';
+  }
+  const checkedPlatforms = Array.from(document.querySelectorAll('input[name="platform"]:checked'));
+  const platforms = checkedPlatforms.map(cb => {
+    if (cb.value === 'other') return document.getElementById('platformOther').value.trim() || '(媒体)';
+    return cb.value;
+  });
+  const platformStr = platforms.length > 0 ? platforms.join(' / ') : '(媒体)';
+  const pageLabel = pageTypes.map(pt => PAGE_URL_MAP[pt]?.label || pt).join('+');
+
+  if (selectedLPs.length === 1) {
+    tagNameEl.textContent = `${agency || '(代理店)'} - ${platformStr} - ${selectedLPs[0]} ${pageLabel}`;
+  } else {
+    tagNameEl.textContent = `${agency || '(代理店)'} - ${platformStr} - [${selectedLPs.length}件] ${pageLabel}`;
+  }
+
+  // ── Trigger Preview ──
+  const triggerParts = [];
+  pageTypes.forEach(pt => {
+    if (pt === 'LP TOP') {
+      if (selectedLPs.length === 1) {
+        triggerParts.push(`Page URL starts with "https://cp.s-herb.com/${selectedLPs[0]}"`);
+      } else {
+        triggerParts.push(`Page URL matches RegEx: LP TOP × ${selectedLPs.length}件`);
+      }
+    } else if (pt === 'サンクスページ') {
+      if (selectedLPs.length === 1) {
+        triggerParts.push(`Page URL contains "${selectedLPs[0]}_SA"`);
+      } else {
+        triggerParts.push(`Page URL matches RegEx: SA × ${selectedLPs.length}件`);
+      }
+    } else if (pt === '確認画面') {
+      triggerParts.push(`Page URL contains "_confirm" × ${selectedLPs.length}件`);
+    }
+  });
+  triggerEl.textContent = triggerParts.join(' ＋ ') || '—';
+
+  panel.classList.add('show');
 }
 
 function initLPSelect() {
@@ -529,6 +732,8 @@ function renderTags() {
       renderDropdown(document.getElementById('lpSearch').value);
     });
   });
+
+  updatePreviewPanel();
 }
 
 function showToast(message, type) {
@@ -640,3 +845,4 @@ async function handleSubmit(e) {
 </script>
 </body>
 </html>
+
