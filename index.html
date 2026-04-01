@@ -461,9 +461,9 @@
           <span class="preview-label">🌐 対象URL</span>
           <div class="preview-urls-list" id="previewUrls"></div>
         </div>
-        <div class="preview-row" id="previewTagNameRow" style="display:none">
+        <div class="preview-row" id="previewTagNameRow">
           <span class="preview-label">🏷️ タグ名称</span>
-          <span class="preview-value tag-name" id="previewTagName">—</span>
+          <div class="preview-urls-list" id="previewTagNames"></div>
         </div>
         <div class="preview-row" id="previewTriggerRow" style="display:none">
           <span class="preview-label">⚡ トリガー</span>
@@ -625,7 +625,6 @@ const LP_CAMPAIGN_MAP = {"PKG1R_ECO4": "146715", "PKG1Q_ECO4": "146713", "PKG1J_
 function updatePreviewPanel() {
   const panel = document.getElementById('previewPanel');
   const urlsEl = document.getElementById('previewUrls');
-  const tagNameEl = document.getElementById('previewTagName');
   const triggerEl = document.getElementById('previewTrigger');
 
   const pageTypes = [...document.querySelectorAll('input[name="pageType"]:checked')].map(c => c.value);
@@ -692,7 +691,7 @@ function updatePreviewPanel() {
     urlsEl.appendChild(more);
   }
 
-  // ── Tag Name Preview ──
+  // ── Tag Name Preview（発火ページ別） ──
   const agencySelect = document.getElementById('agency');
   let agency = agencySelect.value;
   if (agency === 'other') {
@@ -704,14 +703,24 @@ function updatePreviewPanel() {
     return cb.value;
   });
   const platformStr = platforms.length > 0 ? platforms.join(' / ') : '(媒体)';
-  const pageLabelMap = { 'LP TOP': 'LP', '確認画面': '確認', '再確認画面': '再確認', 'サンクスページ': 'Thanks' };
-  const pageLabel = pageTypes.map(pt => pageLabelMap[pt] || pt).join('+');
+  const pageLabelMap = { 'LP TOP': 'LP', '確認画面': '確認画面', '再確認画面': '再確認', 'サンクスページ': 'サンクス' };
 
-  if (selectedLPs.length === 1) {
-    tagNameEl.textContent = `${agency || '(代理店)'} - ${platformStr} - ${selectedLPs[0]} ${pageLabel}`;
-  } else {
-    tagNameEl.textContent = `${agency || '(代理店)'} - ${platformStr} - [${selectedLPs.length}件] ${pageLabel}`;
-  }
+  const tagNamesEl = document.getElementById('previewTagNames');
+  tagNamesEl.innerHTML = '';
+  const generatedTagNames = [];
+  pageTypes.forEach(pt => {
+    const label = pageLabelMap[pt] || pt;
+    const name = `${agency || '(代理店)'} - ${platformStr} ${label}`;
+    generatedTagNames.push(name);
+    const div = document.createElement('div');
+    div.className = 'preview-url-item';
+    div.style.color = '#0d7a3e';
+    div.style.borderColor = '#bbf7d0';
+    div.textContent = name;
+    tagNamesEl.appendChild(div);
+  });
+  // Store for submit
+  window._generatedTagNames = generatedTagNames;
 
   // ── Trigger Preview ──
   const triggerParts = [];
@@ -928,6 +937,7 @@ async function handleSubmit(e) {
       agency,
       platform: platforms.join(' / '),
       tagName,
+      tagNames: window._generatedTagNames || [],
       workType: workTypeRadio ? workTypeRadio.value : '',
       tagCode: isNewTag ? tagCode : '',
       pageTypes,
