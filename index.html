@@ -454,8 +454,8 @@
       <div class="field">
         <label class="lbl">作業種別<span class="req">*</span></label>
         <div class="radio-group">
-          <label><input type="radio" name="workType" value="既存タグへトリガー追加" required> 既存タグへトリガー追加</label>
-          <label><input type="radio" name="workType" value="新規タグ作成＋トリガー設定" checked> 新規タグ作成＋トリガー設定</label>
+          <label><input type="radio" name="workType" value="既存タグへトリガー追加" required checked> 既存タグへトリガー追加</label>
+          <label><input type="radio" name="workType" value="新規タグ作成＋トリガー設定"> 新規タグ作成＋トリガー設定</label>
         </div>
         <div class="tag-code-wrap" id="tagCodeWrap">
           <label class="lbl" style="margin-top:10px">タグコード / スニペット<span class="req">*</span></label>
@@ -568,9 +568,6 @@ document.addEventListener('DOMContentLoaded', () => {
       updatePreviewPanel();
     });
   });
-
-  // 新規タグ作成がデフォルトなのでタグコード欄を表示
-  document.getElementById('tagCodeWrap').classList.add('show');
 });
 
 function updateTagPreview() {
@@ -619,7 +616,7 @@ function updatePreviewPanel() {
   }
 
   // ── URL Preview（実データベース）──
-  // 確認画面はecforce動的URLのためプレビュー対象外
+  // 確認画面はTPL共通トリガー（ID:283）で処理するためURLプレビュー対象外
   const urls = [];
   selectedLPs.forEach(lp => {
     pageTypes.forEach(pt => {
