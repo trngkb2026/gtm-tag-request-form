@@ -71,8 +71,17 @@
   textarea { resize: vertical; min-height: 80px; }
   /* カレンダーアイコンを左側に表示 */
   input[type="date"] {
-    direction: rtl;
-    text-align: left;
+    position: relative;
+    padding-left: 36px;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    opacity: .6;
+    font-size: 16px;
   }
   .radio-group, .checkbox-group {
     display: flex;
@@ -440,6 +449,7 @@
         <div class="checkbox-group">
           <label><input type="checkbox" name="pageType" value="LP TOP"> LP TOP</label>
           <label><input type="checkbox" name="pageType" value="確認画面"> 確認画面</label>
+          <label><input type="checkbox" name="pageType" value="再確認画面"> 再確認画面</label>
           <label><input type="checkbox" name="pageType" value="サンクスページ"> サンクスページ</label>
         </div>
       </div>
@@ -639,6 +649,13 @@ function updatePreviewPanel() {
         } else {
           urls.push({ url: `⚠ ${lp} → campaign_id 未登録`, lp, page: '確認', valid: false });
         }
+      } else if (pt === '再確認画面') {
+        const cid = LP_CAMPAIGN_MAP[lp];
+        if (cid) {
+          urls.push({ url: `https://cp.s-herb.com/orders/${cid}/reconfirm`, lp, page: '再確認', valid: true });
+        } else {
+          urls.push({ url: `⚠ ${lp} → campaign_id 未登録`, lp, page: '再確認', valid: false });
+        }
       } else if (pt === 'サンクスページ') {
         const cid = LP_CAMPAIGN_MAP[lp];
         if (cid) {
@@ -687,7 +704,7 @@ function updatePreviewPanel() {
     return cb.value;
   });
   const platformStr = platforms.length > 0 ? platforms.join(' / ') : '(媒体)';
-  const pageLabelMap = { 'LP TOP': 'LP', '確認画面': '確認', 'サンクスページ': 'Thanks' };
+  const pageLabelMap = { 'LP TOP': 'LP', '確認画面': '確認', '再確認画面': '再確認', 'サンクスページ': 'Thanks' };
   const pageLabel = pageTypes.map(pt => pageLabelMap[pt] || pt).join('+');
 
   if (selectedLPs.length === 1) {
