@@ -618,7 +618,8 @@ function updatePreviewPanel() {
     return;
   }
 
-  // ── URL Preview（実データベース） ──
+  // ── URL Preview（実データベース）──
+  // 確認画面はecforce動的URLのためプレビュー対象外
   const urls = [];
   selectedLPs.forEach(lp => {
     pageTypes.forEach(pt => {
@@ -631,25 +632,18 @@ function updatePreviewPanel() {
         } else {
           urls.push({ url: `⚠ ${lp} → campaign_id 未登録`, lp, page: 'Thanks', valid: false });
         }
-      } else if (pt === '確認画面') {
-        urls.push({ url: `※ 確認画面はecforce動的URL（LP単位で特定不可）`, lp, page: '確認', valid: false });
       }
     });
   });
 
-  // Deduplicate 確認画面 messages (show once, not per LP)
-  const deduped = [];
-  let confirmShown = false;
-  urls.forEach(u => {
-    if (u.page === '確認' && confirmShown) return;
-    if (u.page === '確認') confirmShown = true;
-    deduped.push(u);
-  });
-
   // Show max 8 URLs, then summarize
+  if (urls.length === 0) {
+    panel.classList.remove('show');
+    return;
+  }
   const maxShow = 8;
   urlsEl.innerHTML = '';
-  deduped.slice(0, maxShow).forEach(u => {
+  urls.slice(0, maxShow).forEach(u => {
     const div = document.createElement('div');
     div.className = 'preview-url-item';
     if (!u.valid) {
@@ -660,10 +654,10 @@ function updatePreviewPanel() {
     div.textContent = u.url;
     urlsEl.appendChild(div);
   });
-  if (deduped.length > maxShow) {
+  if (urls.length > maxShow) {
     const more = document.createElement('div');
     more.style.cssText = 'font-size:12px;color:var(--text-secondary);padding:2px 0;';
-    more.textContent = `...他 ${deduped.length - maxShow} 件`;
+    more.textContent = `...他 ${urls.length - maxShow} 件`;
     urlsEl.appendChild(more);
   }
 
@@ -708,8 +702,6 @@ function updatePreviewPanel() {
       if (unmapped.length > 0) {
         triggerParts.push(`⚠ campaign_id未登録: ${unmapped.join(', ')}`);
       }
-    } else if (pt === '確認画面') {
-      triggerParts.push('ecforce動的URL（個別設定が必要）');
     }
   });
   triggerEl.textContent = triggerParts.join(' ＋ ') || '—';
