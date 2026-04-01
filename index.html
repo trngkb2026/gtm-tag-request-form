@@ -900,6 +900,25 @@ async function handleSubmit(e) {
 
   const tagName = `${agency} - ${platforms.join(' / ')}`;
 
+  // プレビューURL生成（ChatWork通知用）
+  const previewUrls = [];
+  selectedLPs.forEach(lp => {
+    pageTypes.forEach(pt => {
+      if (pt === 'LP TOP') {
+        previewUrls.push(`https://cp.s-herb.com/${lp}`);
+      } else if (pt === '確認画面') {
+        const cid = LP_CAMPAIGN_MAP[lp];
+        if (cid) previewUrls.push(`https://cp.s-herb.com/orders/${cid}/confirm`);
+      } else if (pt === '再確認画面') {
+        const cid = LP_CAMPAIGN_MAP[lp];
+        if (cid) previewUrls.push(`https://cp.s-herb.com/orders/${cid}/reconfirm`);
+      } else if (pt === 'サンクスページ') {
+        const cid = LP_CAMPAIGN_MAP[lp];
+        if (cid) previewUrls.push(`https://cp.s-herb.com/orders/thanks/${cid}/landing`);
+      }
+    });
+  });
+
   btn.disabled = true;
   btn.textContent = '送信中...';
 
@@ -913,6 +932,7 @@ async function handleSubmit(e) {
       tagCode: isNewTag ? tagCode : '',
       pageTypes,
       lpNames: selectedLPs,
+      previewUrls,
       desiredDate: desiredDate || '指定なし',
       requestDate: document.getElementById('requestDate').textContent
     };
