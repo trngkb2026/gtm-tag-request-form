@@ -6,6 +6,9 @@ on:
     - cron: '0 22 * * 0'
   workflow_dispatch: # 手動実行も可能
 
+permissions:
+  contents: write
+
 jobs:
   update-lps:
     runs-on: ubuntu-latest
@@ -35,7 +38,7 @@ jobs:
 
       - name: Update form LP list
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         run: python update_form_lps.py --input output/campaigns.json
 
       - name: Upload campaigns.json as artifact
