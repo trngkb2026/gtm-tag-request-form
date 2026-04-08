@@ -669,7 +669,8 @@ function updatePreviewPanel() {
       } else if (pt === 'サンクスページ') {
         const cid = LP_CAMPAIGN_MAP[lp];
         if (cid) {
-          urls.push({ url: `https://cp.s-herb.com/orders/thanks/${cid}/landing`, lp, page: 'Thanks', valid: true });
+          urls.push({ url: `https://cp.s-herb.com/orders/thanks/${cid}/landing`, lp, page: "Thanks(landing)", valid: true });
+          urls.push({ url: `https://cp.s-herb.com/orders/thanks/${cid}/upsell`, lp, page: "Thanks(upsell)", valid: true });
         } else {
           urls.push({ url: `⚠ ${lp} → campaign_id 未登録`, lp, page: 'Thanks', valid: false });
         }
@@ -934,7 +935,7 @@ async function handleSubmit(e) {
         if (cid) previewUrls.push(`https://cp.s-herb.com/orders/${cid}/reconfirm`);
       } else if (pt === 'サンクスページ') {
         const cid = LP_CAMPAIGN_MAP[lp];
-        if (cid) previewUrls.push(`https://cp.s-herb.com/orders/thanks/${cid}/landing`);
+        if (cid) { previewUrls.push(`https://cp.s-herb.com/orders/thanks/${cid}/landing`); previewUrls.push(`https://cp.s-herb.com/orders/thanks/${cid}/upsell`); }
       }
     });
   });
@@ -991,4 +992,5 @@ async function handleSubmit(e) {
 </script>
 </body>
 </html>
+
 
