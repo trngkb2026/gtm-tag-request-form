@@ -59,14 +59,18 @@ class GhClient:
         self.gh_bin = gh_bin
 
     def _run(self, args: Sequence[str]) -> str:
-        completed = subprocess.run(
-            [self.gh_bin, "api", *args],
-            check=False,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
+        try:
+            completed = subprocess.run(
+                [self.gh_bin, "api", *args],
+                check=False,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=60,
+            )
+        except subprocess.TimeoutExpired as error:
+            raise GhError("gh_api_timeout") from error
         if completed.returncode != 0:
             raise GhError("gh_api_failed")
         return completed.stdout
@@ -103,7 +107,8 @@ def parse_jst_timestamp(value: str) -> dt.datetime:
 def weekly_slot(now: dt.datetime) -> dt.datetime:
     local_now = now.astimezone(JST)
     monday = (local_now - dt.timedelta(days=local_now.weekday())).date()
-    return dt.datetime.combine(monday, dt.time(7, 0), JST)
+    candidate = dt.datetime.combine(monday, dt.time(7, 0), JST)
+    return candidate if candidate <= local_now else candidate - dt.timedelta(days=7)
 
 
 def first_slot_at_or_after(cutover_at: dt.datetime) -> dt.datetime:
@@ -128,18 +133,34 @@ def safe_run_metadata(run: dict[str, Any]) -> dict[str, Any]:
     status = run.get("status")
     conclusion = run.get("conclusion")
     created_at = run.get("created_at")
-    if not isinstance(status, str) or not isinstance(created_at, str):
+    event = run.get("event")
+    head_branch = run.get("head_branch")
+    if (
+        not isinstance(status, str)
+        or not isinstance(created_at, str)
+        or not isinstance(event, str)
+        or not isinstance(head_branch, str)
+    ):
         raise GhError("workflow_run_missing_metadata")
-    metadata = {
+    try:
+        parse_github_timestamp(created_at)
+    except ValueError as error:
+        raise GhError("workflow_run_invalid_timestamp") from error
+    return {
         "id": run_id,
         "status": status,
         "conclusion": conclusion if isinstance(conclusion, str) else None,
         "created_at": created_at,
+        "event": event,
+        "head_branch": head_branch,
     }
-    event = run.get("event")
-    if isinstance(event, str):
-        metadata["event"] = event
-    return metadata
+
+
+def parse_github_timestamp(value: str) -> dt.datetime:
+    parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        raise ValueError("timestamp must include an offset")
+    return parsed.astimezone(dt.timezone.utc)
 
 
 def state_path(state_dir: Path) -> Path:
@@ -220,16 +241,38 @@ def verify_production_workflow(client: GhClient) -> None:
 
 
 def workflow_runs(client: GhClient, status: str | None = None) -> list[dict[str, Any]]:
-    params: list[str] = ["-f", "per_page=100"]
-    if status is not None:
-        params.extend(["-f", f"status={status}"])
-    response = client.get_json(
-        f"repos/{REPOSITORY}/actions/workflows/{WORKFLOW_ID}/runs", params
-    )
-    runs = response.get("workflow_runs")
-    if not isinstance(runs, list):
-        raise GhError("workflow_runs_unavailable")
-    return [safe_run_metadata(run) for run in runs if isinstance(run, dict)]
+    endpoint = f"repos/{REPOSITORY}/actions/workflows/{WORKFLOW_ID}/runs"
+    collected: list[dict[str, Any]] = []
+    expected_total: int | None = None
+    page = 1
+    while expected_total is None or len(collected) < expected_total:
+        params: list[str] = ["-f", "per_page=100", "-f", f"page={page}"]
+        if status is not None:
+            params.extend(["-f", f"status={status}"])
+        response = client.get_json(endpoint, params)
+        total_count = response.get("total_count")
+        runs = response.get("workflow_runs")
+        if not isinstance(total_count, int) or total_count < 0 or not isinstance(runs, list):
+            raise GhError("workflow_runs_unavailable")
+        if expected_total is None:
+            expected_total = total_count
+        elif total_count != expected_total:
+            raise GhError("workflow_runs_changed_during_pagination")
+        if len(collected) + len(runs) > expected_total:
+            raise GhError("workflow_runs_count_invalid")
+        if expected_total > len(collected) and not runs:
+            raise GhError("workflow_runs_pagination_incomplete")
+        for run in runs:
+            if not isinstance(run, dict):
+                raise GhError("workflow_runs_invalid_item")
+            collected.append(safe_run_metadata(run))
+        page += 1
+    if expected_total is None or len(collected) != expected_total:
+        raise GhError("workflow_runs_pagination_incomplete")
+    ids = [run["id"] for run in collected]
+    if len(ids) != len(set(ids)):
+        raise GhError("workflow_runs_duplicate_id")
+    return collected
 
 
 def active_runs(client: GhClient) -> list[dict[str, Any]]:
@@ -275,6 +318,11 @@ def public_result(status: str, now: dt.datetime, **extra: Any) -> dict[str, Any]
     return result
 
 
+def exit_code_for_result(result: dict[str, Any]) -> int:
+    status = result["status"]
+    return 2 if status.startswith("HOLD_") or status == "TERMINAL_FAILURE" else 0
+
+
 def reconcile_pending(
     client: GhClient, state: dict[str, Any], slot: str, now: dt.datetime, state_dir: Path
 ) -> dict[str, Any]:
@@ -282,9 +330,27 @@ def reconcile_pending(
     if not isinstance(pending, dict) or pending.get("slot") != slot:
         raise GhError("pending_invalid")
     before_ids = pending.get("pre_dispatch_run_ids")
-    if not isinstance(before_ids, list) or not all(isinstance(run_id, int) for run_id in before_ids):
+    prepared_at = pending.get("prepared_at")
+    if (
+        not isinstance(before_ids, list)
+        or not all(isinstance(run_id, int) for run_id in before_ids)
+        or not isinstance(prepared_at, str)
+    ):
         raise GhError("pending_invalid")
-    candidates = [run for run in dispatch_runs(client) if run["id"] not in set(before_ids)]
+    try:
+        prepared_time = parse_github_timestamp(prepared_at)
+    except ValueError as error:
+        raise GhError("pending_invalid") from error
+    latest_created_at = prepared_time + dt.timedelta(minutes=10)
+    prior_ids = set(before_ids)
+    candidates = [
+        run
+        for run in dispatch_runs(client)
+        if run["id"] not in prior_ids
+        and run["event"] == "workflow_dispatch"
+        and run["head_branch"] == "main"
+        and prepared_time <= parse_github_timestamp(run["created_at"]) <= latest_created_at
+    ]
     if len(candidates) == 0:
         return public_result("HOLD_PENDING_NO_RUN", now, slot=slot)
     if len(candidates) > 1:
@@ -343,7 +409,8 @@ def execute(
         if state["pending"].get("slot") != slot:
             return public_result("HOLD_POST_UNKNOWN", now, slot=slot), 2
         try:
-            return reconcile_pending(client, state, slot, now, state_dir), 0
+            result = reconcile_pending(client, state, slot, now, state_dir)
+            return result, exit_code_for_result(result)
         except GhError:
             return public_result("HOLD_GH_GET_FAILED", now, slot=slot), 2
 
@@ -394,7 +461,8 @@ def execute(
         except GhError:
             return public_result("HOLD_POST_UNKNOWN", now, slot=slot), 2
     try:
-        return reconcile_pending(client, state, slot, now, state_dir), 0
+        result = reconcile_pending(client, state, slot, now, state_dir)
+        return result, exit_code_for_result(result)
     except GhError:
         return public_result("HOLD_GH_GET_FAILED", now, slot=slot), 2
 

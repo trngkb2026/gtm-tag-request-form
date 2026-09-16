@@ -28,14 +28,19 @@ non-blocking lock permit one dispatch per Monday slot.
 Every invocation first uses GitHub GET requests to confirm that production's
 workflow is active, still has `workflow_dispatch`, and has no `schedule` key.
 It also checks this workflow for `queued`, `in_progress`, `waiting`, `pending`,
-and `requested` runs.  Any such run stops the invocation.
+and `requested` runs.  The run listing is paginated to its reported
+`total_count`; a missing, changing, incomplete, or duplicated page is a HOLD.
+Any active run stops the invocation.
 
 Immediately before the POST, the wrapper atomically records a pending attempt
-and the prior manual-dispatch run IDs in a private `0700` state directory.  It
-never retries a POST automatically.  After a POST it finds exactly one new
-`workflow_dispatch` run by ID; zero or multiple candidates are HOLD states and
-require investigation.  Later GET requests update only allow-listed run
-metadata and report whether the run completed successfully.
+and the prior manual-dispatch run IDs in a private `0700` state directory.  A
+GitHub CLI call has a 60-second timeout; a timed-out POST remains pending and
+is never retried automatically.  After a POST it accepts exactly one new run
+only when it is `workflow_dispatch` on `main` and was created from the pending
+timestamp through the following ten minutes.  Zero or multiple candidates are
+HOLD states and require investigation.  This prevents a later person's manual
+run from being recorded as this dispatch.  Later GET requests update only
+allow-listed run metadata and report whether the run completed successfully.
 
 The wrapper invokes `gh` without accepting a token argument.  Authentication
 stays inside `gh`; stdout contains only repository, workflow ID, timestamp,
