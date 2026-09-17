@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.ten.gtm-weekly-lp-update</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string>
+    <string>/Users/tr/.local/share/ten-gtm-tag-request-form/releases/20260916/launchd/weekly-lp-dispatch.py</string>
+    <string>--cutover-at</string>
+    <string>2026-09-16T00:00:00+09:00</string>
+    <string>--state-dir</string>
+    <string>/Users/tr/Library/Application Support/TEN-WORKS/gtm-tag-request-form-launchd</string>
+    <string>--gh-bin</string>
+    <string>/opt/homebrew/bin/gh</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key>
+    <integer>1</integer>
+    <key>Hour</key>
+    <integer>7</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+  <key>StartInterval</key>
+  <integer>300</integer>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>StandardOutPath</key>
+  <string>/Users/tr/Library/Logs/TEN-WORKS/gtm-weekly-lp-update.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/tr/Library/Logs/TEN-WORKS/gtm-weekly-lp-update.error.log</string>
+</dict>
+</plist>
